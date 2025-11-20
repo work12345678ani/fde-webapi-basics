@@ -86,7 +86,7 @@ async def return_jobs(company_name: str):
 async def test():
     return HTMLResponse("<h1>Bruh moment</h1>")
 
-app.mount("/test", SPAStaticFiles(directory="/mnt/d/FDE Training/code/frontend/dist", html=True), name="test")
+app.mount("/test", SPAStaticFiles(directory="frontend/dist", html=True), name="test")
 
 
 @app.get("/admin")
