@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Image</title>
+</head>
+<body>
+    <h2>Upload Image</h2>
+    <form action="/job-boards/update-information" method="post" enctype="multipart/form-data">
+        <label>Select Company:</label>
+        <select name="company_name">
+            <option value="">-- Select Company --</option>
+            {% for item in Company %}
+                <option value="{{ item }}">{{ item }}</option>
+            {% endfor %}
+        </select>
+
+        <br><br>
+
+        <label>Or enter a new company name:</label>
+        <input type="text" name="new_company_name" placeholder="Company name">
+
+        <br><br>
+        
+        <label>Enter Job Title</label>
+        <input type="text" name="title" placeholder="Job Title">
+
+        <br><br>
+        
+        <label>Enter Job description</label>
+        <input type="text" name="description" placeholder="Job Description">
+        
+        <br><br>
+
+        <label>Select Image:</label>
+        <input type="file" name="file" accept="image/*">
+
+        <br><br>
+
+        <button type="submit">Upload</button>
+    </form>
+</body>
+</html>

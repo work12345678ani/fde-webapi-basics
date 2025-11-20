@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Page</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+    <h1>Job Listings</h1>
+    {% for item in jobs %}
+        <a href="/job-boards/{{ item }}">{{ item.capitalize() }} Jobs</a>
+        <br>
+    {% endfor %}
+</body>
+</html>

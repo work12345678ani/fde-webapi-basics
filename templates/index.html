@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ companyName }} Jobs</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+    <h1>{{ companyName }} job listings</h1>
+    <img src="{{ logo }}" width="200">
+    {% for item in company %}
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.description }}</p>
+    {% endfor %}
+</body>
+</html>
