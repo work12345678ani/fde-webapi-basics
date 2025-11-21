@@ -1,1 +1,5 @@
 fastapi[all]
+sqlalchemy
+psycopg
+pydantic
+pydantic-settings
