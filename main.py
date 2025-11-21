@@ -3,6 +3,9 @@ from fastapi.responses import RedirectResponse, FileResponse, HTMLResponse, JSON
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import create_engine, text
+from modules.connector import get_db_session
+from modules.config import settings
 
 
 
@@ -33,6 +36,9 @@ class SPAStaticFiles(StaticFiles):
             return await super().get_response("index.html", scope)
 
         return response
+
+
+
 
 
 
@@ -73,7 +79,16 @@ async def return_jobs(request: Request, company_name: str):
       return templates.TemplateResponse(request=request, name="index.html", context={"company": combined_job_listings[company_name], "companyName": company_name.capitalize(), "logo": logos.get(company_name, "")})
     else:
         raise HTTPException(status_code=status.HTTP_418_IM_A_TEAPOT, detail="404 Company not found.")
+    
 
+@app.get("/health")
+async def health_check():
+    with get_db_session() as session:
+        try:
+            session.execute(text("SELECT 1"))
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "OK"})
+        except:
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "Database connection failed."})
 
 @app.get("/api/job-boards/{company_name}")
 async def return_jobs(company_name: str):
