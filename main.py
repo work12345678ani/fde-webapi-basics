@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
 from modules.connector import get_db_session
 from modules.config import settings
+from modules.models import JobBoard, JobPosts
 
 
 
@@ -81,6 +82,12 @@ async def return_jobs(request: Request, company_name: str):
         raise HTTPException(status_code=status.HTTP_418_IM_A_TEAPOT, detail="404 Company not found.")
     
 
+@app.get("/api/job-boards")
+async def get_job_boards():
+    with get_db_session() as session:
+        jobBoards = session.query(JobBoard).all()
+        return jobBoards
+
 @app.get("/health")
 async def health_check():
     with get_db_session() as session:
@@ -90,12 +97,31 @@ async def health_check():
         except:
             return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "Database connection failed."})
 
-@app.get("/api/job-boards/{company_name}")
+@app.get("/api/job-boards/{company_name}/job-posts")
 async def return_jobs(company_name: str):
-    if company_name in combined_job_listings.keys():
-        return combined_job_listings[company_name]
-    else:
-        return JSONResponse(status_code=status.HTTP_418_IM_A_TEAPOT, content={"message": "Company not found."})
+    with get_db_session() as session: 
+        job_posts = (
+            session.query(JobPosts)
+            .join(JobBoard, JobPosts.company_id == JobBoard.id)
+            .filter(JobBoard.slug == company_name)
+            .all()
+        )
+
+        if not job_posts:
+            raise HTTPException(
+                status_code=status.HTTP_418_IM_A_TEAPOT,
+                detail={"detail": "Company not found."},
+            )
+
+        return [
+            {
+                "title": job.title,
+                "description": job.description,
+                "location": job.location,
+            }
+            for job in job_posts
+        ]
+
     
 @app.get("/bruh")
 async def test():

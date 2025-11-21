@@ -3,3 +3,4 @@ sqlalchemy
 psycopg2
 pydantic
 pydantic-settings
+alembic==1.17.2
