@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, text
 from modules.connector import get_db_session
 from modules.config import settings
 from modules.models import JobBoard, JobPosts
+import os
 
 
 
@@ -26,20 +27,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-class SPAStaticFiles(StaticFiles):
-    async def get_response(self, path, scope):
-        # Try normal static file handling first
-        response = await super().get_response(path, scope)
-
-        # If file not found, fall back to root index.html
-        if response.status_code == 404:
-            return await super().get_response("index.html", scope)
-
-        return response
-
-
-
 
 
 
@@ -65,21 +52,6 @@ logos = {
     "bcg": "/static/bcg_logo.jpg",
     "atlas": "/static/atlas_logo.png"
 }
-
-# @app.get("/")
-# async def root(request: Request):
-#     return templates.TemplateResponse(request=request, name="homepage.html", context={"jobs": combined_job_listings.keys()}) 
-
-# @app.get("/favicon.ico", include_in_schema=False)
-# async def favicon():
-#     return FileResponse("static/favicon.ico")
-
-# @app.get("/job-boards/{company_name}")
-# async def return_jobs(request: Request, company_name: str):
-#     if company_name in combined_job_listings.keys():
-#       return templates.TemplateResponse(request=request, name="index.html", context={"company": combined_job_listings[company_name], "companyName": company_name.capitalize(), "logo": logos.get(company_name, "")})
-#     else:
-#         raise HTTPException(status_code=status.HTTP_418_IM_A_TEAPOT, detail="404 Company not found.")
 
 
 app.mount("/assets", StaticFiles(directory="frontend/build/client/assets"))
@@ -122,6 +94,7 @@ async def return_jobs(company_name: str):
 
         return [
             {
+                "id": job.id,
                 "title": job.title,
                 "description": job.description,
                 "location": job.location,
@@ -129,36 +102,8 @@ async def return_jobs(company_name: str):
             for job in job_posts
         ]
 # ===============================================================================
-    
-# @app.get("/bruh")
-# async def test():
-#     return HTMLResponse("<h1>Bruh moment</h1>")
 
-# app.mount("/app", SPAStaticFiles(directory="frontend/dist", html=True), name="app")
-
-
-# @app.get("/admin")
-# async def admin_page(request: Request):
-#     return templates.TemplateResponse(request=request, name="admin.html", context={"Company": combined_job_listings.keys()})
-
-# @app.post("/job-boards/update-information")
-# async def update_information(
-#     company_name: str = Form(...),
-#     new_company_name: str = Form(...),
-#     title: str = Form(...),
-#     description: str = Form(...),
-#     file: UploadFile | None = None
-# ):
-#     if company_name == "" and new_company_name == "":
-#         return HTMLResponse("<h1>Please provide a company name.</h1>", status_code=status.HTTP_400_BAD_REQUEST)
-#     if company_name not in combined_job_listings:
-#         company_name = new_company_name
-#         combined_job_listings[company_name] = []
-#     combined_job_listings[company_name].append({"title": title, "description": description})
-#     if file and file.filename:
-#         file_location = f"static/{company_name}_logo.{file.filename.split('.')[-1]}"
-#         with open(file_location, "wb+") as file_object:
-#             file_object.write(file.file.read())
-#         logos[company_name] = f"/static/{company_name}_logo.{file.filename.split('.')[-1]}"
-#     return RedirectResponse(url=f"/job-boards/{company_name}", status_code=status.HTTP_303_SEE_OTHER)
-        
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+  indexFilePath = os.path.join("frontend", "build", "client", "index.html")
+  return FileResponse(path=indexFilePath, media_type="text/html")

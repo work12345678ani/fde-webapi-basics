@@ -1,0 +1,13 @@
+import { route, type RouteConfig, index, prefix, layout } from "@react-router/dev/routes";
+
+export default [
+    layout("layouts/default.tsx", [
+        ...prefix("job-boards", [
+            route("/", "routes/job_boards.tsx"),
+            route(":companyName/job-posts", "routes/job_posts.tsx")
+        ]),
+        route("/", "routes/home.tsx") // route, the component we need to render
+    ])
+] satisfies RouteConfig;
+
+
