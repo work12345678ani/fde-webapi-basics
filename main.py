@@ -70,26 +70,32 @@ logos = {
 # async def root(request: Request):
 #     return templates.TemplateResponse(request=request, name="homepage.html", context={"jobs": combined_job_listings.keys()}) 
 
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    return FileResponse("static/favicon.ico")
+# @app.get("/favicon.ico", include_in_schema=False)
+# async def favicon():
+#     return FileResponse("static/favicon.ico")
 
-@app.get("/job-boards/{company_name}")
-async def return_jobs(request: Request, company_name: str):
-    if company_name in combined_job_listings.keys():
-      return templates.TemplateResponse(request=request, name="index.html", context={"company": combined_job_listings[company_name], "companyName": company_name.capitalize(), "logo": logos.get(company_name, "")})
-    else:
-        raise HTTPException(status_code=status.HTTP_418_IM_A_TEAPOT, detail="404 Company not found.")
-    
+# @app.get("/job-boards/{company_name}")
+# async def return_jobs(request: Request, company_name: str):
+#     if company_name in combined_job_listings.keys():
+#       return templates.TemplateResponse(request=request, name="index.html", context={"company": combined_job_listings[company_name], "companyName": company_name.capitalize(), "logo": logos.get(company_name, "")})
+#     else:
+#         raise HTTPException(status_code=status.HTTP_418_IM_A_TEAPOT, detail="404 Company not found.")
+
+
+app.mount("/assets", StaticFiles(directory="frontend/build/client/assets"))
+
+# =================================API ENDPOINTS=================================
 
 @app.get("/api/job-boards")
 async def get_job_boards():
+    """Return all job boards from the database"""
     with get_db_session() as session:
         jobBoards = session.query(JobBoard).all()
         return jobBoards
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
+    """Checks if the database connection is healthy"""
     with get_db_session() as session:
         try:
             session.execute(text("SELECT 1"))
@@ -99,6 +105,7 @@ async def health_check():
 
 @app.get("/api/job-boards/{company_name}/job-posts")
 async def return_jobs(company_name: str):
+    """Return all jobs for a specific company. Returns 418 if the company is not found"""
     with get_db_session() as session: 
         job_posts = (
             session.query(JobPosts)
@@ -121,37 +128,37 @@ async def return_jobs(company_name: str):
             }
             for job in job_posts
         ]
-
+# ===============================================================================
     
-@app.get("/bruh")
-async def test():
-    return HTMLResponse("<h1>Bruh moment</h1>")
+# @app.get("/bruh")
+# async def test():
+#     return HTMLResponse("<h1>Bruh moment</h1>")
 
-app.mount("/test", SPAStaticFiles(directory="frontend/dist", html=True), name="test")
+# app.mount("/app", SPAStaticFiles(directory="frontend/dist", html=True), name="app")
 
 
-@app.get("/admin")
-async def admin_page(request: Request):
-    return templates.TemplateResponse(request=request, name="admin.html", context={"Company": combined_job_listings.keys()})
+# @app.get("/admin")
+# async def admin_page(request: Request):
+#     return templates.TemplateResponse(request=request, name="admin.html", context={"Company": combined_job_listings.keys()})
 
-@app.post("/job-boards/update-information")
-async def update_information(
-    company_name: str = Form(...),
-    new_company_name: str = Form(...),
-    title: str = Form(...),
-    description: str = Form(...),
-    file: UploadFile | None = None
-):
-    if company_name == "" and new_company_name == "":
-        return HTMLResponse("<h1>Please provide a company name.</h1>", status_code=status.HTTP_400_BAD_REQUEST)
-    if company_name not in combined_job_listings:
-        company_name = new_company_name
-        combined_job_listings[company_name] = []
-    combined_job_listings[company_name].append({"title": title, "description": description})
-    if file and file.filename:
-        file_location = f"static/{company_name}_logo.{file.filename.split('.')[-1]}"
-        with open(file_location, "wb+") as file_object:
-            file_object.write(file.file.read())
-        logos[company_name] = f"/static/{company_name}_logo.{file.filename.split('.')[-1]}"
-    return RedirectResponse(url=f"/job-boards/{company_name}", status_code=status.HTTP_303_SEE_OTHER)
+# @app.post("/job-boards/update-information")
+# async def update_information(
+#     company_name: str = Form(...),
+#     new_company_name: str = Form(...),
+#     title: str = Form(...),
+#     description: str = Form(...),
+#     file: UploadFile | None = None
+# ):
+#     if company_name == "" and new_company_name == "":
+#         return HTMLResponse("<h1>Please provide a company name.</h1>", status_code=status.HTTP_400_BAD_REQUEST)
+#     if company_name not in combined_job_listings:
+#         company_name = new_company_name
+#         combined_job_listings[company_name] = []
+#     combined_job_listings[company_name].append({"title": title, "description": description})
+#     if file and file.filename:
+#         file_location = f"static/{company_name}_logo.{file.filename.split('.')[-1]}"
+#         with open(file_location, "wb+") as file_object:
+#             file_object.write(file.file.read())
+#         logos[company_name] = f"/static/{company_name}_logo.{file.filename.split('.')[-1]}"
+#     return RedirectResponse(url=f"/job-boards/{company_name}", status_code=status.HTTP_303_SEE_OTHER)
         
