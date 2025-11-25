@@ -62,6 +62,17 @@ logos = {
 
 app.mount("/assets", StaticFiles(directory="frontend/build/client/assets"))
 
+#=================================PYDANTIC CLASSES=================================
+
+class NewCompany(BaseModel):
+    id: int
+    slug: str
+    logo: UploadFile = File(...)
+
+class UpdateCompany(BaseModel):
+    slug: str
+    logo: UploadFile = File(...)
+
 # =================================API ENDPOINTS=================================
 
 @app.get("/api/job-boards")
@@ -108,13 +119,6 @@ async def return_jobs(company_name: str):
             for job in job_posts
         ]
 
-
-
-class NewCompany(BaseModel):
-    id: int
-    slug: str
-    logo: UploadFile = File(...)
-
 @app.post("/api/job-boards")
 async def add_job_board(details: Annotated[NewCompany, Form()]):
     contents = await details.logo.read()
@@ -127,11 +131,7 @@ async def add_job_board(details: Annotated[NewCompany, Form()]):
         )
         session.add(row)
         session.commit()
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok"})
-
-class UpdateCompany(BaseModel):
-    slug: str
-    logo: UploadFile = File(...)
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": file_path})
 
 @app.post("/api/job-boards/update")
 async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
