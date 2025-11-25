@@ -2,17 +2,23 @@ from fastapi import FastAPI, HTTPException, status, Request, File, UploadFile, F
 from fastapi.responses import RedirectResponse, FileResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
+from typing import Annotated
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
 from modules.connector import get_db_session
 from modules.config import settings
 from modules.models import JobBoard, JobPosts
+from pydantic import BaseModel, Field, field_validator
+from modules.file_storage import upload_file
 import os
 
 
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+if not settings.PRODUCTION:
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 
 templates = Jinja2Templates(directory="templates")
 
@@ -101,6 +107,47 @@ async def return_jobs(company_name: str):
             }
             for job in job_posts
         ]
+
+
+
+class NewCompany(BaseModel):
+    id: int
+    slug: str
+    logo: UploadFile = File(...)
+
+@app.post("/api/job-boards")
+async def add_job_board(details: Annotated[NewCompany, Form()]):
+    contents = await details.logo.read()
+    file_path = upload_file("logos", details.logo.filename, contents, details.logo.content_type)
+    with get_db_session() as session:
+        row = JobBoard(
+            id=details.id,
+            slug=details.slug,
+            logo_url=file_path
+        )
+        session.add(row)
+        session.commit()
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok"})
+
+class UpdateCompany(BaseModel):
+    slug: str
+    logo: UploadFile = File(...)
+
+@app.post("/api/job-boards/update")
+async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
+    with get_db_session() as session:
+        company = session.query(JobBoard).filter(JobBoard.slug == details.slug).first()
+        if not company:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"status": "Error", "message":"Company not found"})
+        file_content = await details.logo.read()
+        if not details.logo.content_type.startswith("image/"):
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"status":"Error", "message":"Not an image"})
+        company.logo_url = upload_file("logos", details.logo.filename, file_content, details.logo.content_type)
+        session.commit()
+        session.refresh(company)
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"status":"ok", "messaage":"successfully updated"})
+
+
 # ===============================================================================
 
 @app.get("/{full_path:path}")

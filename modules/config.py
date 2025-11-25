@@ -3,6 +3,7 @@ from pydantic import AnyUrl
 
 class Settings(BaseSettings):
     DATABASE_URL: AnyUrl
+    PRODUCTION: bool
 
     class Config:
         env_file = ".env"

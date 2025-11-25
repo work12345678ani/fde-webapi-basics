@@ -12,9 +12,18 @@ export default function JobBoards({loaderData}: any) {
     <div>
       {loaderData.jobBoards.map(
         (jobBoard: any) => 
-          <p key={jobBoard.id}>
-            <Link to={`/job-boards/${jobBoard.slug}/job-posts`}>{jobBoard.slug}</Link>
-          </p>
+              <div style={{
+                  display: "flex",
+                  flexWrap: "wrap"
+              }}>
+                  <p key={jobBoard.id}>
+                      <Link to={`/job-boards/${jobBoard.slug}/job-posts`}>{jobBoard.slug}</Link>
+                  </p>
+                  <img src={jobBoard.logo_url} style={{
+                    width: "100px",
+                    height: "100px"
+                  }}></img>
+              </div>
       )}
     </div>
   )
