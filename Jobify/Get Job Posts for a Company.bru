@@ -1,0 +1,20 @@
+meta {
+  name: Get Job Posts for a Company
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{URL}}/api/job-boards/:company_name/job-posts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  company_name: 
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

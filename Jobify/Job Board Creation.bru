@@ -1,0 +1,22 @@
+meta {
+  name: Job Board Creation
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{URL}}/api/job-boards
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  id: 
+  slug: 
+  logo: @file()
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

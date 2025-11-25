@@ -1,0 +1,16 @@
+meta {
+  name: Get Job Boards
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{URL}}/api/job-boards
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

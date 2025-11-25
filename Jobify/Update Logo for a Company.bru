@@ -1,0 +1,21 @@
+meta {
+  name: Update Logo for a Company
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{URL}}/api/job-boards/update
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  slug: 
+  logo: @file()
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
