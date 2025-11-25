@@ -4,6 +4,8 @@ from pydantic import AnyUrl
 class Settings(BaseSettings):
     DATABASE_URL: AnyUrl
     PRODUCTION: bool
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
 
     class Config:
         env_file = ".env"
