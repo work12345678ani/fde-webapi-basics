@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
 from modules.connector import get_db_session
 from modules.config import settings
-from modules.models import JobBoard, JobPosts
+from modules.models import JobBoard, JobPosts, JobApplications
 from pydantic import BaseModel, Field, field_validator
 from modules.file_storage import upload_file
 import os
@@ -73,6 +73,17 @@ class UpdateCompany(BaseModel):
     slug: str
     logo: UploadFile = File(...)
 
+class JobApplication(BaseModel):
+    first_name: Annotated[str, Form()]
+    last_name: Annotated[str, Form()]
+    email: Annotated[str, Form()]
+    job_id: Annotated[int, Form()]
+    resume: UploadFile = File(...)
+
+class DeleteCompany(BaseModel):
+    slug: str
+    
+
 # =================================API ENDPOINTS=================================
 
 @app.get("/api/job-boards")
@@ -118,6 +129,53 @@ async def return_jobs(company_name: str):
             }
             for job in job_posts
         ]
+@app.get("/api/job-applications")
+async def get_job_applications():
+    with get_db_session() as session:
+        job_applications = (
+            session.query(JobApplications).all()
+        )
+
+        return [
+            {
+                "id" :app.id,
+                "job_id": app.job_post_id,
+                "first_name": app.first_name,
+                "last_name": app.last_name,
+                "email": app.email,
+                "resume_loc": app.resume_loc
+            }
+            for app in job_applications
+        ]
+
+@app.post("/api/job-applications")
+async def apply_for_job(applicant: Annotated[JobApplication, Form()]):
+    try:
+        with get_db_session() as session:
+            isOpen = session.query(
+                JobPosts.isOpen
+            ).filter(JobPosts.id == applicant.job_id).scalar()
+
+            if not isOpen:
+                return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"status":"error", "message":"Application does not exist or is no longer accepting new applicants"})
+
+            resume_content = await applicant.resume.read()
+
+            resume_path = upload_file("resumes", applicant.resume.filename, resume_content, applicant.resume.content_type)
+
+            row = JobApplications(
+                job_post_id = applicant.job_id,
+                first_name = applicant.first_name, 
+                last_name = applicant.last_name, 
+                email = applicant.email,
+                resume_loc = resume_path
+            )
+            session.add(row)
+            session.commit()
+
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ok", "message":"Successfully uploaded"})
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": e})     
 
 @app.post("/api/job-boards")
 async def add_job_board(details: Annotated[NewCompany, Form()]):
@@ -133,7 +191,7 @@ async def add_job_board(details: Annotated[NewCompany, Form()]):
         session.commit()
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": file_path})
 
-@app.post("/api/job-boards/update")
+@app.put("/api/job-boards/update")
 async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
     with get_db_session() as session:
         company = session.query(JobBoard).filter(JobBoard.slug == details.slug).first()
@@ -147,6 +205,17 @@ async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
         session.refresh(company)
         return JSONResponse(status_code=status.HTTP_200_OK, content={"status":"ok", "messaage":"successfully updated"})
 
+
+@app.delete("/api/job-boards/delete")
+async def delete_job_board(details: Annotated[DeleteCompany, Form()]):
+    slug = details.slug
+    with get_db_session() as session:
+        job_board = session.query(JobBoard).filter_by(slug=slug).first()
+        if job_board:
+            session.delete(job_board)
+            session.commit()
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"status":"ok", "messaage":"successfully deleted"})
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"status":"error", "messaage":"Company not found"})
 
 # ===============================================================================
 

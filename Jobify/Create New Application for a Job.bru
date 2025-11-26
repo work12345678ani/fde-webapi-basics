@@ -1,0 +1,24 @@
+meta {
+  name: Create New Application for a Job
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{URL}}/api/job-applications
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  first_name: Obi-Wan
+  last_name: Kenobi
+  email: obiwan@jedi.org
+  job_id: 3
+  resume: @file(C:\Users\anirudh.pg\Downloads\Reimbursely.pdf)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

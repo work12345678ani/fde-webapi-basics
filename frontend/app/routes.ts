@@ -4,7 +4,8 @@ export default [
     layout("layouts/default.tsx", [
         ...prefix("job-boards", [
             route("/", "routes/job_boards.tsx"),
-            route(":companyName/job-posts", "routes/job_posts.tsx")
+            route(":companyName/job-posts", "routes/job_posts.tsx"),
+            route("/new", "routes/new_job_board.tsx")
         ]),
         route("/", "routes/home.tsx") // route, the component we need to render
     ])

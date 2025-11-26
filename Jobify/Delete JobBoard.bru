@@ -1,19 +1,17 @@
 meta {
-  name: Job Board Creation
+  name: Delete JobBoard
   type: http
-  seq: 4
+  seq: 7
 }
 
-post {
-  url: {{URL}}/api/job-boards
+delete {
+  url: {{URL}}/api/job-boards/delete
   body: multipartForm
   auth: inherit
 }
 
 body:multipart-form {
-  id: 
-  slug: 
-  logo: @file()
+  slug: NebulaWorks
 }
 
 settings {
