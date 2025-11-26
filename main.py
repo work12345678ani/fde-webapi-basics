@@ -129,6 +129,14 @@ async def return_jobs(company_name: str):
             }
             for job in job_posts
         ]
+@app.get("/api/job-boards/{company_name}")
+async def get_company_details(company_name: str):
+    with get_db_session() as session:
+        company = session.query(JobBoard).filter(JobBoard.slug==company_name).first()
+        if not company:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"status": "Error", "message":"Company not found"})
+        return JSONResponse(content={"slug": company.slug, "logo_url": company.logo_url, "id": company.id})
+
 @app.get("/api/job-applications")
 async def get_job_applications():
     with get_db_session() as session:
@@ -206,9 +214,8 @@ async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
         return JSONResponse(status_code=status.HTTP_200_OK, content={"status":"ok", "messaage":"successfully updated"})
 
 
-@app.delete("/api/job-boards/delete")
-async def delete_job_board(details: Annotated[DeleteCompany, Form()]):
-    slug = details.slug
+@app.delete("/api/job-boards/{slug}/delete")
+async def delete_job_board(slug: str):
     with get_db_session() as session:
         job_board = session.query(JobBoard).filter_by(slug=slug).first()
         if job_board:
