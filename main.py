@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status, Request, File, UploadFile, Form
+from fastapi import Depends, FastAPI, HTTPException, status, Request, File, UploadFile, Form, Response, Cookie
 from fastapi.responses import RedirectResponse, FileResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
@@ -10,6 +10,7 @@ from modules.config import settings
 from modules.models import JobBoard, JobPosts, JobApplications
 from pydantic import BaseModel, Field, field_validator
 from modules.file_storage import upload_file
+from modules.auth import authenticate_admin, is_admin #type: ignore
 import os
 
 
@@ -62,6 +63,20 @@ logos = {
 
 app.mount("/assets", StaticFiles(directory="frontend/build/client/assets"))
 
+def is_admin_user(admin_session: str | None = Cookie(default=None)):
+    if not admin_session:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not Logged in.",
+        )
+    if not is_admin(admin_session):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin session.",
+        )
+    return "authenticated"
+
+
 #=================================PYDANTIC CLASSES=================================
 
 class NewCompany(BaseModel):
@@ -82,9 +97,24 @@ class JobApplication(BaseModel):
 
 class DeleteCompany(BaseModel):
     slug: str
-    
+
+class AdminLoginForm(BaseModel):
+   username : str
+   password : str
 
 # =================================API ENDPOINTS=================================
+
+
+
+@app.post("/api/admin-login")
+async def admin_login(response: Response, admin_login_form: Annotated[AdminLoginForm, Form()]):
+   auth_response = authenticate_admin(admin_login_form.username, admin_login_form.password)
+   if auth_response is not None:
+      secure = settings.PRODUCTION
+      response.set_cookie(key="admin_session", value=auth_response, httponly=True, secure=secure, samesite="Lax")
+      return {}
+   else:
+      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
 @app.get("/api/job-boards")
 async def get_job_boards():
@@ -186,7 +216,7 @@ async def apply_for_job(applicant: Annotated[JobApplication, Form()]):
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": e})     
 
 @app.post("/api/job-boards")
-async def add_job_board(details: Annotated[NewCompany, Form()]):
+async def add_job_board(details: Annotated[NewCompany, Form()], admin=Depends(is_admin_user)):
     contents = await details.logo.read()
     file_path = upload_file("logos", details.logo.filename, contents, details.logo.content_type)
     with get_db_session() as session:
@@ -200,7 +230,7 @@ async def add_job_board(details: Annotated[NewCompany, Form()]):
     return JSONResponse(status_code=status.HTTP_200_OK, content={"status": file_path})
 
 @app.put("/api/job-boards/update")
-async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
+async def update_company_logo(details: Annotated[UpdateCompany, Form()], admin=Depends(is_admin_user)):
     with get_db_session() as session:
         company = session.query(JobBoard).filter(JobBoard.slug == details.slug).first()
         if not company:
@@ -215,7 +245,7 @@ async def update_company_logo(details: Annotated[UpdateCompany, Form()]):
 
 
 @app.delete("/api/job-boards/{slug}/delete")
-async def delete_job_board(slug: str):
+async def delete_job_board(slug: str, admin=Depends(is_admin_user)):
     with get_db_session() as session:
         job_board = session.query(JobBoard).filter_by(slug=slug).first()
         if job_board:

@@ -5,3 +5,4 @@ pydantic
 pydantic-settings
 alembic==1.17.2
 supabase==2.24.0
+httpx==0.28.1

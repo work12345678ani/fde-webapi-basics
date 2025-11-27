@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     PRODUCTION: bool
     SUPABASE_URL: str
     SUPABASE_KEY: str
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    RESEND_API_KEY: str
 
     class Config:
         env_file = ".env"

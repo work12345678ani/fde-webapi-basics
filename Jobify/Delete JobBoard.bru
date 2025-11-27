@@ -5,13 +5,13 @@ meta {
 }
 
 delete {
-  url: {{URL}}/api/job-boards/delete
+  url: {{URL}}/api/job-boards/:slug/delete
   body: multipartForm
   auth: inherit
 }
 
-body:multipart-form {
-  slug: NebulaWorks
+params:path {
+  slug: Los1 Pollos Hermanos
 }
 
 settings {
